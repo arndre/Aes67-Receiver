@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Aes67AudioConsole/Aes67AudioConsole.csproj" />
+  <Project Path="Aes67Receiver/Aes67Receiver.csproj" />
+</Solution>
