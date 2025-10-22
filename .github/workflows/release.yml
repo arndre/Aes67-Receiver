@@ -1,0 +1,59 @@
+name: Build and Release Console App
+
+# Trigger on pushes to master or when a tag is created
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'  # releases triggered by tags
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup .NET SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'  # your project uses .NET 8
+
+      # 3️⃣ Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore Aes67Receiver.slnx
+
+      # 4️⃣ Auto-increment version number in csproj
+      - name: Auto increment version
+        id: version
+        run: |
+          $csproj = './Aes67AudioConsole/Aes67AudioConsole.csproj'
+          $ver = (Get-Date -Format "yyyy.MM.dd.HHmm")
+          Write-Host "Setting version to $ver"
+          (Get-Content $csproj) -replace '<Version>.*</Version>', "<Version>$ver</Version>" | Set-Content $csproj
+          echo "VERSION=$ver" >> $GITHUB_ENV
+
+      # 5️⃣ Build and publish executable
+      - name: Build and publish console app
+        run: dotnet publish ./Aes67AudioConsole/Aes67AudioConsole.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o out
+
+      # 6️⃣ Upload artifact (optional, for download in Actions tab)
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aes67ConsoleApp-win-x64
+          path: out/*.exe
+
+      # 7️⃣ Create GitHub Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          files: out/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
