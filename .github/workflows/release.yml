@@ -1,5 +1,8 @@
 name: Build and Release
 
+permissions:
+  contents: write   # allows pushing tags
+
 on:
   push:
     branches:
